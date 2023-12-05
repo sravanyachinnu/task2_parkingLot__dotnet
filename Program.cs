@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+
 namespace ParkingLot
 {
     enum VehicleType
@@ -8,11 +10,6 @@ namespace ParkingLot
         FourWheel,
         HeavyVehicle
     }
-    /* enum ShowAllParking
-     {
-         ShowParkingStatus,
-         ShowUnParkingStatus
-     }*/
     static class TicketGenerator
     {
         private static int ticketNumber = 1;
@@ -27,9 +24,9 @@ namespace ParkingLot
     }
     class Program
     {
+        static List<Vehicle> allVehicles = new List<Vehicle>();
         static void Main(string[] args)
         {
-
             bool setupCompleted = false;
             do
             {
@@ -58,6 +55,13 @@ namespace ParkingLot
             List<TwoWheel> twoWheels = SetupParking<TwoWheel>("two wheel", "Enter the number of two wheel: ");
             List<FourWheel> fourWheels = SetupParking<FourWheel>("four wheel", "Enter the number of four wheel: ");
             List<HeavyVehicle> heavyVehicles = SetupParking<HeavyVehicle>("heavy vehicle", "Enter the number of heavy vehicle:");
+            allVehicles.AddRange(twoWheels.Cast<Vehicle>());
+            allVehicles.AddRange(fourWheels.Cast<Vehicle>());
+            allVehicles.AddRange(heavyVehicles.Cast<Vehicle>());
+            /*     List<Vehicle> vehicles = new List<Vehicle>();
+                 vehicles.Add(new TwoWheel());
+                 vehicles.Add(new FourWheel());
+                 vehicles.Add(new HeavyVehicle());*/
 
             char choice;
             do
@@ -105,9 +109,6 @@ namespace ParkingLot
                 }
             } while (choice != 'E');
         }
-
-
-
         static List<T> SetupParking<T>(string parkingType, string message) where T : Vehicle
         {
             try
@@ -135,6 +136,7 @@ namespace ParkingLot
         {
             Console.WriteLine(vehicleType + ":");
             parking.Select((v, i) => $"{i + 1}. {v.GetParkingStatus()}").ToList().ForEach(Console.WriteLine);
+
         }
 
 
@@ -155,37 +157,56 @@ namespace ParkingLot
             {
                 Console.WriteLine("Invalid input. Please enter P or U .");
             }
-            Console.WriteLine("Enter the vehicle index:");
-            int index = int.Parse(Console.ReadLine());
-            index--;
-            if (index < 0 || index >= parking.Count)
-            {
-                throw new IndexOutOfRangeException("Invalid vehicle index.");
-            }
+            /* Console.WriteLine("Enter the vehicle index:");
+             int index = int.Parse(Console.ReadLine());
+             index--;
+             if (index < 0 || index >= parking.Count)
+             {
+                 throw new IndexOutOfRangeException("Invalid vehicle index.");
+             }*/
             switch (action)
             {
                 case 'P':
                     string ticket = TicketGenerator.GenerateTicket();
                     Console.WriteLine("Enter the vehicle number:");
                     int vehicleNumber = int.Parse(Console.ReadLine());
-                    Console.WriteLine("parking place");
+                    Console.WriteLine("Parking place:");
                     string location = Console.ReadLine();
                     DateTime currentTime = DateTime.Now;
                     string inTime = currentTime.ToString("hh:mm tt");
-                    parking[index].ParkVehicle(ticket, vehicleNumber, location, inTime, "");
+
+                    foreach (var vehicle in parking)
+                    {
+                        if (vehicle.VehicleNumber == 0)
+                        {
+                            vehicle.ParkVehicle(ticket, vehicleNumber, location, inTime, "");
+                            break;
+                        }
+                    }
                     break;
                 case 'U':
-                    DateTime currentOutTime = DateTime.Now;
-                    string outTime = currentOutTime.ToString("hh:mm tt");
-                    parking[index].UnparkVehicle(outTime);
+                    Console.WriteLine("Enter the vehicle number to unpark:");
+                    int vehicleToUnpark = int.Parse(Console.ReadLine());
+
+                    foreach (var vehicle in parking)
+                    {
+                        if (vehicle.VehicleNumber == vehicleToUnpark)
+                        {
+                            DateTime currentOutTime = DateTime.Now;
+                            string outTime = currentOutTime.ToString("hh:mm tt");
+                            vehicle.UnparkVehicle(outTime);
+                            break;
+                        }
+                    }
                     break;
                 default:
-                    throw new InvalidOperationException("Invalid action.");
+                    Console.WriteLine("Invalid action.");
+                    break;
             }
         }
     }
-
 }
+
 abstract class Vehicle
 {
     public int VehicleNumber { get; set; }
@@ -212,7 +233,6 @@ abstract class Vehicle
         Console.WriteLine($"Vehicle {VehicleNumber} unparked, Out Time: {outTime}");
 
     }
-
     public virtual string GetParkingStatus()
     {
         if (VehicleNumber == 0)
@@ -234,7 +254,7 @@ abstract class Vehicle
         }
         else
         {
-            return $"vehicle parked ," +
+            return $"vehicle unparked ," +
                 $" location.{Location},Ticket No: {Ticket}, Vehicle No: {VehicleNumber}, In Time: {InTime},Out Time: {OutTime}";
         }
     }
